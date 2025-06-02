@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Non-Profit Event Planning Concierge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the Inter font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-600 to-indigo-800 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 md:p-12 rounded-xl shadow-2xl text-center max-w-2xl w-full transform transition-all duration-300 hover:scale-105">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
+            Empowering Non-Profits Through Seamless Event Planning
+        </h1>
+        <p class="text-lg md:text-xl text-gray-700 mb-8">
+            Are you a community organizer looking to make a bigger impact? Let us handle the complexities of event planning, so you can focus on your mission.
+        </p>
+        <p class="text-md md:text-lg text-gray-600 mb-10">
+            Fill out our quick form to get started, and we'll help you find the perfect rentable venues and resources for your next impactful event.
+        </p>
+        <a href="https://forms.gle/akgPTsgWRJRqBmRa8" target="_blank" rel="noopener noreferrer"
+           class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-full text-lg md:text-xl shadow-lg transform transition-all duration-300 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+            Help Me With Planning My Event!
+        </a>
+
+        <div class="mt-12 pt-8 border-t-2 border-gray-200 text-left">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">
+                ✨ Get a Draft Event Description ✨
+            </h2>
+            <p class="text-gray-700 mb-4">
+                Provide some details about your event, and our AI will help you draft a compelling description.
+            </p>
+            <div class="mb-6">
+                <label for="eventPurpose" class="block text-gray-700 text-sm font-bold mb-2">
+                    Event Purpose / Theme:
+                </label>
+                <textarea id="eventPurpose" rows="3"
+                          class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          placeholder="e.g., Annual fundraiser for youth literacy program, Community clean-up day, Volunteer appreciation dinner."></textarea>
+            </div>
+            <div class="mb-6">
+                <label for="eventDetails" class="block text-gray-700 text-sm font-bold mb-2">
+                    Key Details (Date, Attendees, Location type, etc.):
+                </label>
+                <textarea id="eventDetails" rows="3"
+                          class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          placeholder="e.g., June 15th, 100 guests, downtown park, indoor venue."></textarea>
+            </div>
+            <button id="generateDescriptionBtn"
+                    class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full text-lg shadow-lg transform transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-400 focus:ring-opacity-50">
+                Generate Description
+            </button>
+            <div id="loadingIndicator" class="text-center mt-4 text-gray-600 hidden">
+                Generating... Please wait.
+            </div>
+            <div id="generatedDescription" class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200 text-gray-800 whitespace-pre-wrap text-left hidden">
+                </div>
+        </div>
+
+        <div class="mt-12 text-gray-500 text-sm">
+            <p>&copy; 2025 Your Concierge Service Name. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('generateDescriptionBtn').addEventListener('click', async () => {
+            const eventPurpose = document.getElementById('eventPurpose').value;
+            const eventDetails = document.getElementById('eventDetails').value;
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const generatedDescriptionDiv = document.getElementById('generatedDescription');
+
+            if (!eventPurpose.trim() || !eventDetails.trim()) {
+                generatedDescriptionDiv.textContent = 'Please provide both event purpose and key details to generate a description.';
+                generatedDescriptionDiv.classList.remove('hidden');
+                return;
+            }
+
+            loadingIndicator.classList.remove('hidden');
+            generatedDescriptionDiv.classList.add('hidden');
+            generatedDescriptionDiv.textContent = ''; // Clear previous content
+
+            const prompt = `Draft a concise and engaging event description for a non-profit event. 
+            The purpose of the event is: "${eventPurpose}". 
+            Key details: "${eventDetails}". 
+            Make it suitable for an invitation or website.`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Canvas will automatically provide the API key at runtime.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    generatedDescriptionDiv.textContent = text;
+                    generatedDescriptionDiv.classList.remove('hidden');
+                } else {
+                    generatedDescriptionDiv.textContent = 'Failed to generate description. Please try again.';
+                    generatedDescriptionDiv.classList.remove('hidden');
+                    console.error('Unexpected API response structure:', result);
+                }
+            } catch (error) {
+                generatedDescriptionDiv.textContent = 'An error occurred while connecting to the API. Please try again later.';
+                generatedDescriptionDiv.classList.remove('hidden');
+                console.error('Error calling Gemini API:', error);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
